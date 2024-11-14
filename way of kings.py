@@ -5,7 +5,7 @@ import openpyxl
 
 # Function to format the chapter name based on item ID patterns
 def format_chapter_name(item_id):
-    # Define patterns and associated chapter names
+    # Check for various section patterns
     if re.search(r'\bded\b', item_id, re.IGNORECASE):
         return "Dedication"
     elif re.search(r'\back\b', item_id, re.IGNORECASE):
@@ -15,11 +15,19 @@ def format_chapter_name(item_id):
     elif re.search(r'\bpro\b', item_id, re.IGNORECASE):
         return "Prologue"
     elif match := re.search(r'\bc(\d+)\b', item_id, re.IGNORECASE):
-        return f"Chapter {int(match.group(1))}"  # Convert to integer for clean display
-    elif match := re.search(r'\bp(\d+)\b', item_id, re.IGNORECASE):
-        return f"Interlude {int(match.group(1))}"  # Interludes based on p and number pattern
+        return f"Chapter {int(match.group(1))}"
+    elif match := re.search(r'\bp(\d{2})\b', item_id, re.IGNORECASE):  # Match parts like p01, p02
+        return f"Part {int(match.group(1))}"
+    elif match := re.search(r'\bp(\d{2})a(?:_c(\d+))?\b', item_id, re.IGNORECASE):
+        # Handle interludes and their parts, e.g., p01a, p01a_c01, p02a_c04
+        interlude_number = int(match.group(1))  # Extracts the interlude number, e.g., 01
+        if match.group(2):  # Checks if there's an additional part number after _c
+            interlude_part = int(match.group(2))  # Extracts the interlude part number
+            return f"Interlude {interlude_number} Part {interlude_part}"
+        else:
+            return f"Interlude {interlude_number}"
     else:
-        # Remove '.xhtml' extension if present, and return the raw item_id as a fallback
+        # Fallback to removing '.xhtml' extension if pattern is unrecognized
         return item_id.replace('.xhtml', '')
 
 # Function to extract and format text from the EPUB file in spine order
@@ -68,7 +76,7 @@ def create_excel_with_chapters(chapters, output_path="epub_content_v2.xlsx"):
 
 # Define file paths
 epub_file_path = "C:/Users/jryan/Documents/python/The_Way_of_Kings.epub"
-output_excel_path = "C:/Users/jryan/Documents/python/The_Way_of_Kings.xlsx"
+output_excel_path = "C:/Users/jryan/Documents/python/The_Way_of_Kings_2.xlsx"
 
 # Extract text from EPUB and create the Excel file
 chapters = extract_text_from_epub(epub_file_path)
